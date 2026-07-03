@@ -61,3 +61,114 @@ def test_match_rejects_short_text(client: TestClient, auth_headers: dict[str, st
     )
 
     assert response.status_code == 422
+
+
+def test_match_is_saved_to_history(client: TestClient, auth_headers: dict[str, str]) -> None:
+    response = client.post(
+        "/match",
+        json={
+            "resume_text": (
+                "Backend developer. Python, FastAPI, PostgreSQL, Redis, Docker. "
+                "Worked with REST API and authentication."
+            ),
+            "vacancy_text": (
+                "Looking for junior backend developer. Python, FastAPI, PostgreSQL, "
+                "Redis, Docker, REST API."
+            ),
+        },
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 200
+
+    history_response = client.get("/match/history", headers=auth_headers)
+
+    assert history_response.status_code == 200
+
+    history = history_response.json()
+
+    assert history["total"] == 1
+    assert len(history["items"]) == 1
+
+    item = history["items"][0]
+
+    assert 0.0 <= item["match_score"] <= 1.0
+    assert item["resume_text"]
+    assert item["vacancy_text"]
+    assert item["resume_analysis"]["category"] == "backend"
+    assert item["vacancy_analysis"]["category"] == "backend"
+
+
+def test_get_match_history_item(client: TestClient, auth_headers: dict[str, str]) -> None:
+    client.post(
+        "/match",
+        json={
+            "resume_text": (
+                "Backend developer. Python, FastAPI, PostgreSQL, Redis, Docker. "
+                "Worked with REST API and authentication."
+            ),
+            "vacancy_text": (
+                "Looking for junior backend developer. Python, FastAPI, PostgreSQL, "
+                "Redis, Docker, REST API."
+            ),
+        },
+        headers=auth_headers,
+    )
+
+    history = client.get("/match/history", headers=auth_headers).json()
+    match_id = history["items"][0]["id"]
+
+    response = client.get(f"/match/history/{match_id}", headers=auth_headers)
+
+    assert response.status_code == 200
+    assert response.json()["id"] == match_id
+
+
+def test_match_history_isolated_between_users(
+    client: TestClient,
+    auth_headers: dict[str, str],
+) -> None:
+    client.post(
+        "/match",
+        json={
+            "resume_text": (
+                "Backend developer. Python, FastAPI, PostgreSQL, Redis, Docker. "
+                "Worked with REST API and authentication."
+            ),
+            "vacancy_text": (
+                "Looking for junior backend developer. Python, FastAPI, PostgreSQL, "
+                "Redis, Docker, REST API."
+            ),
+        },
+        headers=auth_headers,
+    )
+
+    first_user_history = client.get("/match/history", headers=auth_headers).json()
+    match_id = first_user_history["items"][0]["id"]
+
+    client.post(
+        "/auth/register",
+        json={
+            "email": "match_other@example.com",
+            "password": "strongpassword123",
+        },
+    )
+    login = client.post(
+        "/auth/login",
+        data={
+            "username": "match_other@example.com",
+            "password": "strongpassword123",
+        },
+    )
+
+    other_headers = {
+        "Authorization": f"Bearer {login.json()['access_token']}",
+    }
+
+    own_history_response = client.get("/match/history", headers=other_headers)
+    foreign_item_response = client.get(f"/match/history/{match_id}", headers=other_headers)
+
+    assert own_history_response.status_code == 200
+    assert own_history_response.json()["total"] == 0
+
+    assert foreign_item_response.status_code == 404

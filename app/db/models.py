@@ -73,3 +73,44 @@ class Feedback(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
 
     prediction: Mapped["PredictionHistory"] = relationship(back_populates="feedback")
+
+
+class MatchHistory(Base):
+    """История сравнений резюме и вакансий."""
+
+    __tablename__ = "match_history"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    resume_text: Mapped[str] = mapped_column(Text, nullable=False)
+    vacancy_text: Mapped[str] = mapped_column(Text, nullable=False)
+
+    match_score: Mapped[float] = mapped_column(Float, nullable=False)
+    category_match: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    level_match: Mapped[bool] = mapped_column(Boolean, nullable=False)
+
+    matched_skills: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
+    missing_skills: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
+    extra_resume_skills: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
+
+    resume_analysis: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    vacancy_analysis: Mapped[dict] = mapped_column(JSONB, nullable=False)
+
+    explanation: Mapped[str] = mapped_column(Text, nullable=False)
+    model_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )

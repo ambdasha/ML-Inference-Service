@@ -3,7 +3,7 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.db.models import Feedback, PredictionHistory, User
+from app.db.models import Feedback, PredictionHistory, User, PredictionHistory
 
 
 class UserRepository:
@@ -103,3 +103,82 @@ class FeedbackRepository:
         self.db.commit()
         self.db.refresh(existing)
         return existing
+
+class MatchHistoryRepository:
+    """Работа с историей сравнений резюме и вакансий."""
+
+    def __init__(self, db: Session):
+        self.db = db
+
+    def create(
+        self,
+        *,
+        user_id: uuid.UUID,
+        resume_text: str,
+        vacancy_text: str,
+        match_score: float,
+        category_match: bool,
+        level_match: bool,
+        matched_skills: list[str],
+        missing_skills: list[str],
+        extra_resume_skills: list[str],
+        resume_analysis: dict,
+        vacancy_analysis: dict,
+        explanation: str,
+        model_version: str | None,
+    ) -> MatchHistory:
+        record = MatchHistory(
+            user_id=user_id,
+            resume_text=resume_text,
+            vacancy_text=vacancy_text,
+            match_score=match_score,
+            category_match=category_match,
+            level_match=level_match,
+            matched_skills=matched_skills,
+            missing_skills=missing_skills,
+            extra_resume_skills=extra_resume_skills,
+            resume_analysis=resume_analysis,
+            vacancy_analysis=vacancy_analysis,
+            explanation=explanation,
+            model_version=model_version,
+        )
+
+        self.db.add(record)
+        self.db.commit()
+        self.db.refresh(record)
+
+        return record
+
+    def list_for_user(
+        self,
+        user_id: uuid.UUID,
+        *,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> list[MatchHistory]:
+        stmt = (
+            select(MatchHistory)
+            .where(MatchHistory.user_id == user_id)
+            .order_by(MatchHistory.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+
+        return list(self.db.scalars(stmt).all())
+
+    def count_for_user(self, user_id: uuid.UUID) -> int:
+        stmt = select(func.count(MatchHistory.id)).where(MatchHistory.user_id == user_id)
+        return int(self.db.scalar(stmt) or 0)
+
+    def get_by_id(
+        self,
+        *,
+        match_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> MatchHistory | None:
+        stmt = select(MatchHistory).where(
+            MatchHistory.id == match_id,
+            MatchHistory.user_id == user_id,
+        )
+
+        return self.db.scalar(stmt)
