@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
-from app.api import auth, history, predict
+from app.api import auth, history, predict, match
 from app.core.config import settings
 from app.core.logging import get_logger, setup_logging
 from app.ml.model_loader import load_models
@@ -32,7 +32,10 @@ app = FastAPI(
 
 app.include_router(auth.router)
 app.include_router(predict.router)
+app.include_router(match.router)
 app.include_router(history.router)
+app.include_router(models.router)
+app.include_router(jobs.router)
 
 
 @app.get("/health", tags=["system"])
