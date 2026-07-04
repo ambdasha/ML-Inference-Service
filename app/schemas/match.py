@@ -1,9 +1,11 @@
-from pydantic import BaseModel, Field, field_validator
+from datetime import datetime
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.config import settings
 from app.schemas.prediction import CategoryEnum, LevelEnum
-from datetime import datetime
-from uuid import UUID
+
 
 class MatchRequest(BaseModel):
     """Запрос на сравнение резюме и вакансии."""
@@ -40,6 +42,8 @@ class TextAnalysisResult(BaseModel):
 class MatchResponse(BaseModel):
     """Ответ сервиса сравнения резюме и вакансии."""
 
+    model_config = ConfigDict(protected_namespaces=())
+
     match_score: float = Field(ge=0.0, le=1.0)
     category_match: bool
     level_match: bool
@@ -55,10 +59,13 @@ class MatchResponse(BaseModel):
     model_version: str | None = None
 
 
-
-
 class MatchHistoryItem(BaseModel):
     """Один элемент истории сравнений."""
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        protected_namespaces=(),
+    )
 
     id: UUID
     resume_text: str
@@ -78,10 +85,6 @@ class MatchHistoryItem(BaseModel):
     explanation: str
     model_version: str | None
     created_at: datetime
-
-    model_config = {
-        "from_attributes": True,
-    }
 
 
 class MatchHistoryList(BaseModel):

@@ -17,6 +17,41 @@ from app.db.database import Base, get_db  # noqa: E402
 TEST_DATABASE_URL = os.environ["DATABASE_URL"]
 
 
+
+@pytest.fixture()
+def mock_ml(monkeypatch):
+    """Подменяет ML-модель в тестах, чтобы тесты не зависели от .pkl-файлов."""
+
+    from app.api import match as match_api
+
+    class DummyModelBundle:
+        version = "test-model-v1"
+
+    def fake_get_model_bundle(db):
+        return DummyModelBundle()
+
+    def fake_predict(text: str, bundle):
+        lower_text = text.lower()
+
+        if "frontend" in lower_text or "react" in lower_text:
+            return {
+                "category": "frontend",
+                "level": "junior",
+                "skills": ["javascript", "react"],
+                "confidence": 0.9,
+            }
+
+        return {
+            "category": "backend",
+            "level": "junior",
+            "skills": ["python", "fastapi", "postgresql", "redis", "docker", "rest api"],
+            "confidence": 0.9,
+        }
+
+    monkeypatch.setattr(match_api, "get_model_bundle", fake_get_model_bundle)
+    monkeypatch.setattr(match_api.predictor, "predict", fake_predict)
+
+
 @pytest.fixture(scope="session")
 def engine():
     eng = create_engine(TEST_DATABASE_URL)
