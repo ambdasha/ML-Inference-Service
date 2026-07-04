@@ -1,9 +1,9 @@
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.db.models import Feedback, PredictionHistory, User, PredictionHistory
+from app.db.models import Feedback, MatchHistory, PredictionHistory, User
 
 
 class UserRepository:

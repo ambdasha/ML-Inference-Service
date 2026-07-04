@@ -34,8 +34,6 @@ app.include_router(auth.router)
 app.include_router(predict.router)
 app.include_router(match.router)
 app.include_router(history.router)
-app.include_router(models.router)
-app.include_router(jobs.router)
 
 
 @app.get("/health", tags=["system"])

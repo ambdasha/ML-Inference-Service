@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     # Cache
     PREDICTION_CACHE_TTL_SECONDS: int = 86400
 
+    MAX_TEXT_LENGTH: int = 10_000
+
 
 @lru_cache
 def get_settings() -> Settings:

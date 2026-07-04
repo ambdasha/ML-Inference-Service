@@ -20,6 +20,11 @@ class User(Base):
     predictions: Mapped[list["PredictionHistory"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    match_history = relationship(
+        "MatchHistory",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
 
 class PredictionHistory(Base):
@@ -114,3 +119,4 @@ class MatchHistory(Base):
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
+    user = relationship("User", back_populates="match_history")
