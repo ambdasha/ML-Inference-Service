@@ -15,7 +15,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     predictions: Mapped[list["PredictionHistory"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
@@ -41,7 +41,7 @@ class PredictionHistory(Base):
     cached: Mapped[bool] = mapped_column(Boolean, default=False)
     model_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     user: Mapped["User"] = relationship(back_populates="predictions")
     feedback: Mapped["Feedback | None"] = relationship(
@@ -60,7 +60,7 @@ class ModelVersion(Base):
     accuracy: Mapped[float | None] = mapped_column(Float, nullable=True)
     f1_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 
 class Feedback(Base):
@@ -75,7 +75,7 @@ class Feedback(Base):
     correct_category: Mapped[str | None] = mapped_column(String(50), nullable=True)
     correct_level: Mapped[str | None] = mapped_column(String(50), nullable=True)
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     prediction: Mapped["PredictionHistory"] = relationship(back_populates="feedback")
 
