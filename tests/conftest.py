@@ -20,20 +20,20 @@ TEST_DATABASE_URL = os.environ["DATABASE_URL"]
 
 @pytest.fixture()
 def mock_ml(monkeypatch):
-    """Подменяет ML-модель в тестах, чтобы тесты не зависели от .pkl-файлов."""
+    """Подменяет ML-модель в тестах /match."""
 
     from app.api import match as match_api
 
     class DummyModelBundle:
         version = "test-model-v1"
 
-    def fake_get_model_bundle(db):
+    def fake_get_model_bundle(*args, **kwargs):
         return DummyModelBundle()
 
-    def fake_predict(text: str, bundle):
+    def fake_predict(text: str, *args, **kwargs):
         lower_text = text.lower()
 
-        if "frontend" in lower_text or "react" in lower_text:
+        if "frontend" in lower_text or "react" in lower_text or "javascript" in lower_text:
             return {
                 "category": "frontend",
                 "level": "junior",
@@ -51,7 +51,6 @@ def mock_ml(monkeypatch):
     monkeypatch.setattr(match_api, "get_model_bundle", fake_get_model_bundle)
     monkeypatch.setattr(match_api.predictor, "predict", fake_predict)
 
-
 @pytest.fixture(scope="session")
 def engine():
     eng = create_engine(TEST_DATABASE_URL)
@@ -62,17 +61,17 @@ def engine():
 
 @pytest.fixture()
 def db_session(engine):
-    connection = engine.connect()
-    transaction = connection.begin()
-    Session = sessionmaker(bind=connection)
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+
+    Session = sessionmaker(bind=engine)
     session = Session()
 
     yield session
 
     session.close()
-    transaction.rollback()
-    connection.close()
 
+    Base.metadata.drop_all(bind=engine)
 
 @pytest.fixture()
 def fake_redis(monkeypatch):

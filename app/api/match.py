@@ -64,7 +64,6 @@ def _build_match_response(
         model_version=model_version,
     )
 
-
 @router.post(
     "",
     response_model=MatchResponse,
@@ -76,10 +75,11 @@ def match_resume_with_vacancy(
     db: Session = Depends(get_db),
 ) -> MatchResponse:
     """Сравнивает резюме кандидата с текстом вакансии и сохраняет результат."""
-    bundle = get_model_bundle(db)
+    bundle = get_model_bundle()
+    model_version = getattr(bundle, "version", None)
 
-    resume_result = predictor.predict(payload.resume_text, bundle)
-    vacancy_result = predictor.predict(payload.vacancy_text, bundle)
+    resume_result = predictor.predict(payload.resume_text)
+    vacancy_result = predictor.predict(payload.vacancy_text)
 
     matched_skills, missing_skills, extra_resume_skills, skill_score = calculate_skill_match(
         resume_skills=resume_result["skills"],
@@ -115,7 +115,7 @@ def match_resume_with_vacancy(
         level_match=level_match,
         match_score=match_score,
         explanation=explanation,
-        model_version=bundle.version,
+        model_version=model_version,
     )
 
     MatchHistoryRepository(db).create(
@@ -135,7 +135,6 @@ def match_resume_with_vacancy(
     )
 
     return response
-
 
 @router.get("/history", response_model=MatchHistoryList)
 def list_match_history(
