@@ -9,12 +9,13 @@ from tempfile import TemporaryDirectory
 import joblib
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 from sklearn.svm import LinearSVC
 from sklearn.linear_model import LogisticRegression
+
+from training.evaluation import evaluate_predictions
 
 
 DATASET_PATH = Path("training/dataset.csv")
@@ -135,20 +136,20 @@ def measure_inference_time_ms(model: Pipeline, texts: list[str]) -> float:
     return round((elapsed / len(texts)) * 1000, 4)
 
 
-def evaluate_model(
-    *,
-    model: Pipeline,
-    x_test: list[str],
-    y_test: list[str],
-) -> dict[str, float]:
-    """Считает основные метрики качества."""
-    predictions = model.predict(x_test)
+# def evaluate_model(
+#     *,
+#     model: Pipeline,
+#     x_test: list[str],
+#     y_test: list[str],
+# ) -> dict[str, float]:
+#     """Считает основные метрики качества."""
+#     predictions = model.predict(x_test)
 
-    return {
-        "accuracy": round(accuracy_score(y_test, predictions), 4),
-        "f1_macro": round(f1_score(y_test, predictions, average="macro"), 4),
-        "f1_weighted": round(f1_score(y_test, predictions, average="weighted"), 4),
-    }
+#     return {
+#         "accuracy": round(accuracy_score(y_test, predictions), 4),
+#         "f1_macro": round(f1_score(y_test, predictions, average="macro"), 4),
+#         "f1_weighted": round(f1_score(y_test, predictions, average="weighted"), 4),
+#     }
 
 
 def save_experiment_model(
@@ -198,10 +199,11 @@ def compare_for_target(
         model.fit(x_train, y_train)
         train_time_sec = time.perf_counter() - train_start
 
-        metrics = evaluate_model(
-            model=model,
-            x_test=x_test,
-            y_test=y_test,
+        predictions = model.predict(x_test)
+
+        metrics = evaluate_predictions(
+            y_true=y_test,
+            y_pred=predictions,
         )
 
         inference_time_ms = measure_inference_time_ms(
@@ -221,8 +223,8 @@ def compare_for_target(
             {
                 "target": target,
                 "model_name": config.name,
-                "accuracy": metrics["accuracy"],
-                "f1_macro": metrics["f1_macro"],
+                "accuracy": metrics.accuracy,
+                "f1_macro": metrics.f1_macro,
                 "f1_weighted": metrics["f1_weighted"],
                 "train_time_sec": round(train_time_sec, 4),
                 "inference_time_ms": inference_time_ms,
