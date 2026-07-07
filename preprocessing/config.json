@@ -1,0 +1,10 @@
+{
+  "raw_dataset_path": "data/raw/resume_data.csv",
+  "output_dataset_path": "data/processed/dataset.csv",
+  "report_output_path": "data/reports/quality_report.md",
+  "text_columns": ["career_objective", "skills", "major_field_of_studies", "positions", "responsibilities"],
+  "min_text_length": 20,
+  "min_matched_score": 0.4,
+  "log_level": "INFO",
+  "log_file": "data/reports/preprocess.log"
+}
