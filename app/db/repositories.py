@@ -74,6 +74,10 @@ class PredictionRepository:
         )
         return list(self.db.scalars(stmt))
 
+    def count_for_user(self, user_id: uuid.UUID) -> int:
+        stmt = select(func.count(PredictionHistory.id)).where(PredictionHistory.user_id == user_id)
+        return int(self.db.scalar(stmt) or 0)
+
 
 class FeedbackRepository:
     def __init__(self, db: Session) -> None:

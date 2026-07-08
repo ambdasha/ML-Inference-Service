@@ -13,7 +13,7 @@ from app.ml.matcher import (
     calculate_skill_match,
 )
 from app.ml.model_loader import get_model_bundle
-from app.ml.predictor import Predictor
+from app.ml.predictor import get_predictor
 from app.schemas.match import (
     MatchHistoryItem,
     MatchHistoryList,
@@ -23,8 +23,6 @@ from app.schemas.match import (
 )
 
 router = APIRouter(prefix="/match", tags=["match"])
-
-predictor = Predictor()
 
 
 def _to_text_analysis_result(result: dict) -> TextAnalysisResult:
@@ -78,6 +76,7 @@ def match_resume_with_vacancy(
     bundle = get_model_bundle()
     model_version = getattr(bundle, "version", None)
 
+    predictor = get_predictor()
     resume_result = predictor.predict(payload.resume_text)
     vacancy_result = predictor.predict(payload.vacancy_text)
 

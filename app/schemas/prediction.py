@@ -14,6 +14,7 @@ class LevelEnum(str, Enum):
     intern = "intern"
     junior = "junior"
     middle = "middle"
+    senior = "senior"
 
 
 class PredictRequest(BaseModel):

@@ -19,12 +19,13 @@ def get_history(
 ) -> HistoryListResponse:
     repo = PredictionRepository(db)
     items = repo.list_for_user(current_user.id, limit=limit, offset=offset)
+    total = repo.count_for_user(current_user.id)
 
     return HistoryListResponse(
         items=[HistoryItem.model_validate(item) for item in items],
         limit=limit,
         offset=offset,
-        total=len(items),
+        total=total,
     )
 
 
