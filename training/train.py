@@ -9,6 +9,7 @@
     python training/train.py
 """
 
+import argparse
 import os
 
 import joblib
@@ -35,12 +36,42 @@ def clean_for_training(text: str) -> str:
 
 
 def main() -> None:
-    if not os.path.exists(DATASET_PATH):
-        raise FileNotFoundError(
-            f"Не найден {DATASET_PATH}. Сначала запустите training/generate_dataset.py"
-        )
+    parser = argparse.ArgumentParser(description="Обучение ML-моделей")
+    parser.add_argument(
+        "--data",
+        type=str,
+        default=None,
+        help="Путь к CSV-файлу датасета для обучения"
+    )
+    args = parser.parse_args()
 
-    df = pd.read_csv(DATASET_PATH)
+    dataset_path = args.data
+    if not dataset_path:
+        real_data_path = "data/processed/dataset.csv"
+        synth_data_path = DATASET_PATH
+        if os.path.exists(real_data_path) and os.path.exists(synth_data_path):
+            print("Обнаружены оба датасета. Объединяем их для мультиязычного обучения:")
+            print(f"  - Реальный (EN): {real_data_path}")
+            print(f"  - Синтетический (RU): {synth_data_path}")
+            df_real = pd.read_csv(real_data_path)
+            df_synth = pd.read_csv(synth_data_path)
+            df = pd.concat([df_real, df_synth], ignore_index=True)
+            print(f"Итоговый размер объединенного датасета: {len(df)} строк.")
+        elif os.path.exists(real_data_path):
+            dataset_path = real_data_path
+            print(f"Используется реальный предобработанный датасет: {dataset_path}")
+            df = pd.read_csv(dataset_path)
+        else:
+            dataset_path = synth_data_path
+            print(f"Используется синтетический датасет по умолчанию: {dataset_path}")
+            df = pd.read_csv(dataset_path)
+    else:
+        if not os.path.exists(dataset_path):
+            raise FileNotFoundError(
+                f"Не найден файл датасета: {dataset_path}. "
+                "Сначала запустите training/generate_dataset.py или preprocessing/preprocess.py"
+            )
+        df = pd.read_csv(dataset_path)
     df["text_clean"] = df["text"].apply(clean_for_training)
 
     X_train, X_test, y_cat_train, y_cat_test, y_lvl_train, y_lvl_test = train_test_split(

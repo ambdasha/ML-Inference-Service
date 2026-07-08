@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 import time
 from dataclasses import dataclass
@@ -35,12 +36,31 @@ class ModelConfig:
     estimator: object
 
 
-def load_dataset(path: Path = DATASET_PATH) -> pd.DataFrame:
+def load_dataset(path: Path | None = None) -> pd.DataFrame:
     """Загружает датасет и проверяет обязательные колонки."""
+    if path is None:
+        real_data_path = Path("data/processed/dataset.csv")
+        synth_data_path = DATASET_PATH
+        if real_data_path.exists() and synth_data_path.exists():
+            print("Обнаружены оба датасета. Объединяем их для мультиязычного сравнения:")
+            print(f"  - Реальный (EN): {real_data_path}")
+            print(f"  - Синтетический (RU): {synth_data_path}")
+            df_real = pd.read_csv(real_data_path)
+            df_synth = pd.read_csv(synth_data_path)
+            df = pd.concat([df_real, df_synth], ignore_index=True)
+            print(f"Итоговый размер объединенного датасета: {len(df)} строк.")
+            return df
+        elif real_data_path.exists():
+            path = real_data_path
+            print(f"Используется реальный предобработанный датасет: {path}")
+        else:
+            path = synth_data_path
+            print(f"Используется синтетический датасет по умолчанию: {path}")
+
     if not path.exists():
         raise FileNotFoundError(
             f"Датасет не найден: {path}. "
-            "Сначала запусти python training/generate_dataset.py"
+            "Сначала запустите training/generate_dataset.py или preprocessing/preprocess.py"
         )
 
     df = pd.read_csv(path)
@@ -136,22 +156,6 @@ def measure_inference_time_ms(model: Pipeline, texts: list[str]) -> float:
     return round((elapsed / len(texts)) * 1000, 4)
 
 
-# def evaluate_model(
-#     *,
-#     model: Pipeline,
-#     x_test: list[str],
-#     y_test: list[str],
-# ) -> dict[str, float]:
-#     """Считает основные метрики качества."""
-#     predictions = model.predict(x_test)
-
-#     return {
-#         "accuracy": round(accuracy_score(y_test, predictions), 4),
-#         "f1_macro": round(f1_score(y_test, predictions, average="macro"), 4),
-#         "f1_weighted": round(f1_score(y_test, predictions, average="weighted"), 4),
-#     }
-
-
 def save_experiment_model(
     *,
     model: Pipeline,
@@ -225,7 +229,7 @@ def compare_for_target(
                 "model_name": config.name,
                 "accuracy": metrics.accuracy,
                 "f1_macro": metrics.f1_macro,
-                "f1_weighted": metrics["f1_weighted"],
+                "f1_weighted": metrics.f1_weighted,
                 "train_time_sec": round(train_time_sec, 4),
                 "inference_time_ms": inference_time_ms,
                 "model_size_mb": model_size_mb,
@@ -267,9 +271,19 @@ def choose_best_models(results: pd.DataFrame) -> dict:
 
 def main() -> None:
     """Запускает сравнение моделей и сохраняет результаты."""
+    parser = argparse.ArgumentParser(description="Сравнение ML-моделей")
+    parser.add_argument(
+        "--data",
+        type=str,
+        default=None,
+        help="Путь к CSV-файлу датасета для сравнения"
+    )
+    args = parser.parse_args()
+
     EXPERIMENTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    df = load_dataset()
+    data_path = Path(args.data) if args.data else None
+    df = load_dataset(data_path)
 
     all_rows: list[dict] = []
     all_rows.extend(compare_for_target(df=df, target="category"))

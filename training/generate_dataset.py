@@ -135,10 +135,17 @@ LEVEL_PHRASES = {
         "Опыт работы от 3 лет, умение работать в команде и менторить junior.",
         "Самостоятельная разработка фич от идеи до релиза, опыт от 2 лет.",
     ],
+    "senior": [
+        "Опыт работы от 5-6 лет и выше, руководство командой разработчиков.",
+        "Ищем senior-специалиста с глубоким пониманием архитектуры.",
+        "Опыт коммерческой разработки от 5 лет, проектирование архитектуры систем.",
+        "Senior-уровень, опыт наставничества и проведения code review.",
+        "Опыт проектирования высоконагруженных систем, опыт работы более 5 лет.",
+    ],
 }
 
 CATEGORIES = ["backend", "frontend", "data_science", "analytics"]
-LEVELS = ["intern", "junior", "middle"]
+LEVELS = ["intern", "junior", "middle", "senior"]
 
 
 def build_text(category: str, level: str, role_idx: int, skill_idx: int, resp_idx: int, level_idx: int) -> str:
