@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 os.environ.setdefault(
-    "DATABASE_URL", "postgresql://ml_user:ml_password@localhost:5432/ml_inference_test"
+    "DATABASE_URL", "postgresql://ml_user:ml_password@localhost:5435/ml_inference_test"
 )
 
 from app import main  # noqa: E402
@@ -48,8 +48,12 @@ def mock_ml(monkeypatch):
             "confidence": 0.9,
         }
 
+    class FakePredictor:
+        def predict(self, text: str, *args, **kwargs):
+            return fake_predict(text, *args, **kwargs)
+
     monkeypatch.setattr(match_api, "get_model_bundle", fake_get_model_bundle)
-    monkeypatch.setattr(match_api.predictor, "predict", fake_predict)
+    monkeypatch.setattr(match_api, "get_predictor", lambda: FakePredictor())
 
 @pytest.fixture(scope="session")
 def engine():
