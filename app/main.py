@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Response
+from fastapi.staticfiles import StaticFiles
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from app.api import auth, history, predict, match
@@ -44,3 +45,6 @@ def health() -> dict[str, str]:
 @app.get("/metrics", tags=["system"])
 def metrics() -> Response:
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+
+app.mount("/", StaticFiles(directory="static", html=True), name="static")

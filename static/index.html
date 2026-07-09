@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MatchBoard — ML Resume & Vacancy Matcher</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Стили -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-decor">
+        <div class="glow-sphere sphere-1"></div>
+        <div class="glow-sphere sphere-2"></div>
+    </div>
+
+    <!-- КОНТЕЙНЕР АВТОРИЗАЦИИ -->
+    <div id="auth-container" class="auth-wrapper active">
+        <div class="glass-card auth-card">
+            <div class="auth-header">
+                <h1>Match<span>Board</span></h1>
+                <p id="auth-subtitle">Войдите в систему для анализа резюме и вакансий</p>
+            </div>
+            
+            <form id="auth-form">
+                <div class="form-group">
+                    <label for="auth-email">Email адрес</label>
+                    <input type="email" id="auth-email" required placeholder="user@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="auth-password">Пароль</label>
+                    <input type="password" id="auth-password" required placeholder="••••••••" minlength="8">
+                </div>
+                
+                <button type="submit" id="auth-submit-btn" class="btn btn-primary">
+                    <span class="btn-text">Войти</span>
+                    <span class="spinner"></span>
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <p id="auth-toggle-msg"><span id="auth-toggle-text">Нет аккаунта?</span> <a href="#" id="auth-toggle-btn">Зарегистрироваться</a></p>
+            </div>
+            <div id="auth-error" class="alert alert-error hide"></div>
+        </div>
+    </div>
+
+    <!-- ГЛАВНЫЙ ЭКРАН (DASHBOARD) -->
+    <div id="app-container" class="app-wrapper hide">
+        <!-- Шапка -->
+        <header class="main-header glass-card">
+            <div class="logo">
+                <h2>Match<span>Board</span></h2>
+            </div>
+            <div class="user-menu">
+                <span class="user-email" id="user-display-email">email@example.com</span>
+                <button id="logout-btn" class="btn btn-secondary btn-sm">Выйти</button>
+            </div>
+        </header>
+
+        <!-- Основная сетка -->
+        <main class="main-content">
+            <!-- Левая колонка: Ввод -->
+            <section class="input-section glass-card">
+                <h3>Сравнение резюме и вакансии</h3>
+                <p class="section-desc">Вставьте тексты ниже, чтобы определить их соответствие по направлению, грейду и ключевым навыкам.</p>
+                
+                <div class="editors-container">
+                    <div class="editor-group">
+                        <label for="resume-text">Текст резюме</label>
+                        <textarea id="resume-text" placeholder="Пример: Python-разработчик. Опыт работы 3 года. Навыки: FastAPI, Django, PostgreSQL, Docker, Redis..."></textarea>
+                    </div>
+                    <div class="editor-group">
+                        <label for="vacancy-text">Текст вакансии</label>
+                        <textarea id="vacancy-text" placeholder="Пример: Требуется Backend-инженер. Опыт от 2 лет. Стек: Python, FastAPI, SQL, Redis, Docker, Git..."></textarea>
+                    </div>
+                </div>
+
+                <div class="action-bar">
+                    <button id="match-btn" class="btn btn-primary btn-lg">
+                        <span class="btn-text">Рассчитать соответствие</span>
+                        <span class="spinner"></span>
+                    </button>
+                </div>
+                <div id="match-error" class="alert alert-error hide"></div>
+            </section>
+
+            <!-- Правая колонка: Результаты -->
+            <section id="results-section" class="results-section glass-card hide">
+                <h3>Результаты анализа</h3>
+                
+                <div class="results-grid">
+                    <!-- Круговой прогресс и общие метрики -->
+                    <div class="metrics-summary">
+                        <div class="gauge-wrapper">
+                            <svg class="gauge" viewBox="0 0 120 120">
+                                <circle class="gauge-bg" cx="60" cy="60" r="50"></circle>
+                                <circle class="gauge-fill" id="score-gauge" cx="60" cy="60" r="50"></circle>
+                            </svg>
+                            <div class="gauge-text">
+                                <span class="gauge-value" id="score-value">0%</span>
+                                <span class="gauge-label">Match Score</span>
+                            </div>
+                        </div>
+
+                        <div class="classification-tags">
+                            <div class="class-card-mini">
+                                <span class="mini-label">Направление</span>
+                                <span class="mini-val" id="res-category">—</span>
+                            </div>
+                            <div class="class-card-mini">
+                                <span class="mini-label">Уровень (грейд)</span>
+                                <span class="mini-val" id="res-level">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Списки навыков -->
+                    <div class="skills-analysis">
+                        <h4>Анализ навыков</h4>
+                        <div class="skills-groups">
+                            <div class="skills-box skills-matched">
+                                <h5>Совпавшие навыки <span class="badge badge-success" id="cnt-matched">0</span></h5>
+                                <div class="skills-list" id="list-matched"></div>
+                            </div>
+                            <div class="skills-box skills-missing">
+                                <h5>Отсутствуют в резюме <span class="badge badge-danger" id="cnt-missing">0</span></h5>
+                                <div class="skills-list" id="list-missing"></div>
+                            </div>
+                            <div class="skills-box skills-extra">
+                                <h5>Дополнительные навыки <span class="badge badge-info" id="cnt-extra">0</span></h5>
+                                <div class="skills-list" id="list-extra"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Текстовое объяснение -->
+                <div class="explanation-box">
+                    <h4>Объяснение модели</h4>
+                    <p id="res-explanation">—</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- История сравнений -->
+        <section class="history-section glass-card">
+            <div class="history-header">
+                <h3>История сравнений</h3>
+                <button id="refresh-history-btn" class="btn btn-secondary btn-sm">Обновить</button>
+            </div>
+            <div class="table-responsive">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Направление</th>
+                            <th>Грейд (Резюме / Вакансия)</th>
+                            <th>Совпавшие навыки</th>
+                            <th>Match Score</th>
+                            <th>Действие</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-tbody">
+                        <tr>
+                            <td colspan="6" class="table-empty">История пуста или ещё не загружена.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- Модальное окно для деталей истории -->
+    <div id="modal-container" class="modal-wrapper hide">
+        <div class="glass-card modal-card">
+            <div class="modal-header">
+                <h3>Детали сравнения</h3>
+                <button id="modal-close-btn" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-content">
+                <!-- Контент модалки заполняется динамически -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Скрипт -->
+    <script src="app.js"></script>
+</body>
+</html>
