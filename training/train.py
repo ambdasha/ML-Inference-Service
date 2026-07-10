@@ -93,7 +93,7 @@ def main() -> None:
     X_test_vec = vectorizer.transform(X_test)
 
     # --- Модель категории ---
-    category_model = LogisticRegression(max_iter=1000)
+    category_model = LogisticRegression(max_iter=1000, class_weight='balanced')
     category_model.fit(X_train_vec, y_cat_train)
 
     cat_pred = category_model.predict(X_test_vec)
@@ -103,7 +103,7 @@ def main() -> None:
     print(classification_report(y_cat_test, cat_pred, zero_division=0))
 
     # --- Модель уровня ---
-    level_model = LogisticRegression(max_iter=1000)
+    level_model = LogisticRegression(max_iter=1000, class_weight='balanced')
     level_model.fit(X_train_vec, y_lvl_train)
 
     lvl_pred = level_model.predict(X_test_vec)

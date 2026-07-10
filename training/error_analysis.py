@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+import sys
+from pathlib import Path as _Path
+
+sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+
 import argparse
 import json
 from pathlib import Path
@@ -168,6 +173,12 @@ def main():
         default=None,
         help="Путь к CSV-файлу датасета для анализа"
     )
+    parser.add_argument(
+        "--target_class",
+        type=str,
+        default="backend",
+        help="Целевой класс для детального FP/FN анализа (по умолчанию: backend)"
+    )
     args = parser.parse_args()
 
     ERROR_DIR.mkdir(
@@ -230,9 +241,10 @@ def main():
 
     save_hard_examples(errors)
 
-    save_false_positive(errors)
+    target_class = args.target_class
+    save_false_positive(errors, target_class=target_class)
 
-    save_false_negative(errors)
+    save_false_negative(errors, target_class=target_class)
 
     print()
 
@@ -243,4 +255,4 @@ def main():
 if __name__ == "__main__":
     main()
 
-
+    
